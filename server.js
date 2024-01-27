@@ -210,7 +210,22 @@ function categorizeArticles(articles) {
   return categorizedArticles;
 }
 
+// Route to send confirmation email for a new article
+app.post('/send-confirmation-email/:articleId', async (req, res) => {
+  try {
+    const { email } = req.body;
+    const { articleId } = req.params;
 
+    // Call the sendConfirmationEmail function with the articleId
+    await sendConfirmationEmail(email, articleId, req);
+
+    // Send success response
+    res.status(200).json({ success: true, message: 'Confirmation email sent successfully.' });
+  } catch (error) {
+    console.error('Error sending confirmation email:', error);
+    res.status(500).json({ success: false, message: 'Error sending confirmation email.' });
+  }
+});
 app.get('/article', (req, res) => {
   res.render('article'); // Render the thank-you.ejs view
 });
@@ -235,79 +250,80 @@ app.post('/upload-article', upload.single('image'), async (req, res) => {
 
     await newArticle.save();
 
-    // Notify subscribers via email
-    const subscribers = await Subscription.find();
-    const articleLink = `https://your-website-url/article/${newArticle._id}`;
-    const newSubscriberEmail = req.body.email;
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: newSubscriberEmail,
-      subject: `${title}`,
-      html: `
-      <p>Hello Friend! 👋,</p>
-      <p>
-        In this edition, we explore a brand new article that I believe you'll find both insightful and engaging.
-      </p>
-      
-      <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0;">
-      
-        <h2 style="color: #007bff; margin: 0;">${title}</h2>
-      
-        <p style="font-size: 1.2em; color: #333; margin-top: 10px;">
-        Welcome to ByteBurst Insights – your gateway to a world of tech wonders! 🚀 I'm absolutely buzzing to unveil a cutting-edge article nestled in the vibrant realms of
-        <span style="color: #dc3545;">${category}</span>. Brace yourself for an exhilarating journey that promises both insight and excitement!
-      </p>
-      
-      
-        <p style="font-size: 1.2em; color: #333; margin-top: 0;">${description}</p>
-      
-        <p style="font-size: 1.2em; color: #333; margin-top: 10px;">
-          ${
-            category === 'Coding Tips'
-              ? `
-              Enhance your coding skills with expert tips and techniques from seasoned developers. In this category, you can expect:
-              <ul>
-                <li>Insider coding strategies to optimize your development workflow.</li>
-                <li>Best practices for writing clean and efficient code.</li>
-                <li>Problem-solving techniques to tackle common coding challenges.</li>
-              </ul>
-              `
-              : category === 'Latest Tech Trends'
-              ? `
-              Stay at the forefront of the tech world with insights into the latest trends and innovations. Explore:
-              <ul>
-                <li>Emerging technologies shaping the future of software development.</li>
-                <li>Analysis of industry trends and their impact on the tech landscape.</li>
-                <li>Spotlights on cutting-edge tools and frameworks.</li>
-              </ul>
-              `
-              : category === 'Featured Coding Projects'
-              ? `
-              Embark on a journey of inspiration with these standout coding projects that showcase creativity and technical prowess. Dive into:
-              <ul>
-                <li>Showcases of real-world projects demonstrating unique solutions.</li>
-                <li>Behind-the-scenes insights into project development and decision-making.</li>
-                <li>Opportunities to learn from diverse coding styles and project architectures.</li>
-              </ul>
-              `
-              : 'Discover something valuable in these pages.'
-          }
-        </p>
-      
-        <p style="font-size: 1.2em; color: #333; margin-top: 10px;">
-          Read the full article <a href="${articleLink}" style="color: #007bff; text-decoration: none;">here</a>.
-        </p>
-      
-      </div>
-      
-      <p>If you have any thoughts, questions, or feedback, feel free to reply to this email. I always appreciate hearing from you!</p>
-      
-      <p>Happy reading!</p>
-      <p>Best regards,</p>
-      <p>Deon Gewers</p>
-      `,
-    };
+// Notify subscribers via email
+const subscribers = await Subscription.find();
+const newSubscriberEmail = req.body.email;
+// const articleLink = `http:3001//localhost/article/${newArticle._id}`;
+const articleLink = `https://${req.get('host')}/article/${newArticle._id}`;
+const mailOptions = {
+  from: process.env.EMAIL_USER,
+  to: newSubscriberEmail,
+  subject: `${title}`,
+  html: `
+  <p>Hello Friend! 👋,</p>
+  <p>
+    In this edition, I'm thrilled to share a brand new article that I believe you'll find both insightful and engaging.
+  </p>
+  
+  <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0;">
+  
+    <h2 style="color: #007bff; margin: 0;">${title}</h2>
+  
+    <p style="font-size: 1.2em; color: #333; margin-top: 10px;">
+      Welcome to Africa Wake Up – your gateway to a world of tech wonders! 🚀 I'm excited to unveil a cutting-edge article nestled in the vibrant realms of
+      <span style="color: #dc3545;">${category}</span>. Get ready for an exhilarating journey that promises both insight and excitement!
+    </p>
     
+    <p style="font-size: 1.2em; color: #333; margin-top: 0;">${description}</p>
+    
+    <p style="font-size: 1.2em; color: #333; margin-top: 10px;">
+      ${
+        category === 'Coding Tips'
+          ? `
+          Elevate your coding skills with expert tips and techniques from seasoned developers. In this category, expect:
+          <ul>
+            <li>Insider coding strategies to optimize your development workflow.</li>
+            <li>Best practices for writing clean and efficient code.</li>
+            <li>Problem-solving techniques to tackle common coding challenges.</li>
+          </ul>
+          `
+          : category === 'Latest Tech Trends'
+          ? `
+          Stay at the forefront of the tech world with insights into the latest trends and innovations. Explore:
+          <ul>
+            <li>Emerging technologies shaping the future of software development.</li>
+            <li>Analysis of industry trends and their impact on the tech landscape.</li>
+            <li>Spotlights on cutting-edge tools and frameworks.</li>
+          </ul>
+          `
+          : category === 'Featured Coding Projects'
+          ? `
+          Embark on a journey of inspiration with standout coding projects showcasing creativity and technical prowess. Dive into:
+          <ul>
+            <li>Showcases of real-world projects demonstrating unique solutions.</li>
+            <li>Behind-the-scenes insights into project development and decision-making.</li>
+            <li>Opportunities to learn from diverse coding styles and project architectures.</li>
+          </ul>
+          `
+          : 'Discover something valuable in these pages.'
+      }
+    </p>
+  
+    <p style="font-size: 1.2em; color: #333; margin-top: 10px;">
+      Read the full article and join the conversation <strong>by visiting <a href="${articleLink}" style="color: #007bff; text-decoration: none;">my website</a></strong>.
+    </p>
+  
+  </div>
+  
+  <p>If you have any thoughts, questions, or feedback, feel free to reply to this email. I always appreciate hearing from you!</p>
+  
+  <p>Happy reading!</p>
+  <p>Best regards,</p>
+  <p>Deon Gewers</p>
+  `,
+};
+
+
     
 
     subscribers.forEach(subscriber => {
@@ -463,44 +479,47 @@ app.listen(port, () => {
 
 
 
-// Function to send confirmation email
 async function sendConfirmationEmail(email) {
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: email,
-    subject: `Welcome to Deon Gewers' ByteBurst Insights`,
+    subject: `Welcome to Africa Wake Up with Deon Gewers! 🌍`,
     text: `
-Hey there, I'm Deon Gewers! 👋 
+Hello there! 👋 
 
-Thanks a bunch for subscribing to our coding newsletter! 
-You're now part of a fantastic coding community where we explore coding insights and tips twice a week, every Wednesday and Friday.
-As a new subscriber, here's what you can expect:
+I'm Deon Gewers, and I'm thrilled to welcome you to Africa Wake Up – your weekly source for all things tech and inspiration! 🚀
 
-- The ByteBurst Insights: A mid-week coding newsletter filled with actionable ideas to help you craft high-performing, healthy, and innovative coding experiences.
-- The CodeMingle Dispatch: A short and sweet Friday coding newsletter featuring 5 interesting coding ideas to spark your curiosity heading into the weekend.
+Thank you for subscribing to our newsletter. As a part of our community, you'll receive valuable insights and updates every Tuesday, Thursday, and Friday. Here's what you can look forward to:
 
+📅 **Schedule:**
+- **Tuesdays & Thursdays:** Explore the latest tech trends shaping the world.
+- **Fridays:** Get a glimpse into my projects, along with coding tips to enhance your skills.
 
-📚 Curious to dive deeper? Check out the full archive of past coding issues [here](#).
+🌟 **What's Inside:**
+- **Tech Trends:** Stay informed about the latest in technology.
+- **Project Highlights:** Discover the exciting projects I've been working on.
+- **Coding Tips:** Learn practical tips to improve your coding skills.
 
-### A Couple of Quick Requests:
+🔗 **Connect with Me:**
+Stay connected and join the conversation on social media. Let's explore the fascinating world of tech together!
 
-1. Gmail Coders: Add our coding messages to your 'Primary' inbox.
-2. VS Code Users: Add our coding email address to your "Contacts or VIPs."
-3. Git Guardians: Add our coding email address to your "Safe Commits" list.
+✉️ **Quick Tips:**
+1. **Inbox Priority:** Ensure our emails land in your primary inbox.
+2. **Contacts:** Add our email address to your contacts for seamless communication.
+3. **Stay Secure:** Mark us as a safe contact for hassle-free updates.
 
-### Connect with Me:
+🔗 **Connect with Me:**
+Stay connected and join the conversation on LinkedIn: https://www.linkedin.com/in/deon-gewers-60b54a24b/
 
-Stay curious and connect with me on social media to keep up with emerging coding tools, mindsets, and timeless coding lessons:
+Let's explore the fascinating world of tech together!
 
-
-That's all for today! Thanks for joining our coding community. 
-I appreciate you!
+Thank you for being a part of our community. I look forward to sharing the wonders of technology with you!
 
 Happy Coding,
 Deon Gewers
-
 `,
   };
+
 
   await transporter.sendMail(mailOptions);
 }
